@@ -68,7 +68,7 @@
   },
   "devDependencies": {
     "benchmark": "1.0.0",
-    "bitcore-p2p-sparks": "git+https://github.com/sparkspay/bitcore-p2p-sparks.git#development",
+    "bitcore-p2p-sparks": "git+https://github.com/sparkspay/bitcore-p2p-sparks.git",
     "chai": "^3.5.0",
     "coveralls": "^2.11.9",
     "istanbul": "^0.4.3",
