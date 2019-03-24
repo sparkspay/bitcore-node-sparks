@@ -5,10 +5,10 @@ var sparksdRPC = require('bitcored-rpc-sparks');
 var async = require('async');
 var maxTime = 20;
 
-console.log('sparks Service native interface vs. sparks JSON RPC interface');
+console.log('Sparks Service native interface vs. Sparks JSON RPC interface');
 console.log('----------------------------------------------------------------------');
 
-// To run the benchmarks a fully synced sparks Core directory is needed. The RPC comands
+// To run the benchmarks a fully synced Sparks Core directory is needed. The RPC comands
 // can be modified to match the settings in sparks.conf.
 
 var fixtureData = {
@@ -26,7 +26,7 @@ var fixtureData = {
   ]
 };
 
-var sparksd = require('../').services.sparks({
+var sparksd = require('../').services.Sparks({
   node: {
     datadir: process.env.HOME + '/.sparks',
     network: {
@@ -43,12 +43,12 @@ sparksd.start(function(err) {
   if (err) {
     throw err;
   }
-  console.log('sparks Core started');
+  console.log('Sparks Core started');
 });
 
 sparksd.on('ready', function() {
 
-  console.log('sparks Core ready');
+  console.log('Sparks Core ready');
 
   var client = new sparksdRPC({
     host: 'localhost',

@@ -10,7 +10,7 @@ var BaseService = require('../lib/service');
 var index = require('../lib');
 var log = index.log;
 
-describe('sparkscore Node', function() {
+describe('Sparkscore Node', function() {
 
   var baseConfig = {};
 

@@ -19,14 +19,14 @@ var errors = index.errors;
 
 var Transaction = sparkscore.Transaction;
 var readFileSync = sinon.stub().returns(fs.readFileSync(path.resolve(__dirname, '../data/sparks.conf')));
-var sparksService = proxyquire('../../lib/services/sparksd', {
+var SparksService = proxyquire('../../lib/services/sparksd', {
   fs: {
     readFileSync: readFileSync
   }
 });
-var defaultsparksConf = fs.readFileSync(path.resolve(__dirname, '../data/default.sparks.conf'), 'utf8');
+var defaultSparksConf = fs.readFileSync(path.resolve(__dirname, '../data/default.sparks.conf'), 'utf8');
 
-describe('sparks Service', function() {
+describe('Sparks Service', function() {
   var txhex = '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0104ffffffff0100f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac00000000';
 
   var baseConfig = {
@@ -35,21 +35,21 @@ describe('sparks Service', function() {
     },
     spawn: {
       datadir: 'testdir',
-      exec: 'testpath'
+      exec: 'testpath',
     }
   };
 
   describe('@constructor', function() {
     it('will create an instance', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       should.exist(sparksd);
     });
     it('will create an instance without `new`', function() {
-      var sparksd = sparksService(baseConfig);
+      var sparksd = SparksService(baseConfig);
       should.exist(sparksd);
     });
     it('will init caches', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       should.exist(sparksd.utxosCache);
       should.exist(sparksd.txidsCache);
       should.exist(sparksd.balanceCache);
@@ -68,14 +68,14 @@ describe('sparks Service', function() {
       should.exist(sparksd.lastTipTimeout);
     });
     it('will init clients', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.should.deep.equal([]);
       sparksd.nodesIndex.should.equal(0);
       sparksd.nodes.push({client: sinon.stub()});
       should.exist(sparksd.client);
     });
     it('will set subscriptions', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.subscriptions.should.deep.equal({
         address: {},
         rawtransaction: [],
@@ -87,7 +87,7 @@ describe('sparks Service', function() {
 
   describe('#_initDefaults', function() {
     it('will set transaction concurrency', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._initDefaults({transactionConcurrency: 10});
       sparksd.transactionConcurrency.should.equal(10);
       sparksd._initDefaults({});
@@ -97,13 +97,13 @@ describe('sparks Service', function() {
 
   describe('@dependencies', function() {
     it('will have no dependencies', function() {
-      sparksService.dependencies.should.deep.equal([]);
+      SparksService.dependencies.should.deep.equal([]);
     });
   });
 
   describe('#getAPIMethods', function() {
     it('will return spec', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var methods = sparksd.getAPIMethods();
       should.exist(methods);
       methods.length.should.equal(23);
@@ -112,7 +112,7 @@ describe('sparks Service', function() {
 
   describe('#getPublishEvents', function() {
     it('will return spec', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var events = sparksd.getPublishEvents();
       should.exist(events);
       events.length.should.equal(4);
@@ -134,7 +134,7 @@ describe('sparks Service', function() {
       events[3].unsubscribe.should.be.a('function');
     });
     it('will call subscribe/unsubscribe with correct args', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.subscribe = sinon.stub();
       sparksd.unsubscribe = sinon.stub();
       var events = sparksd.getPublishEvents();
@@ -174,7 +174,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('will push to subscriptions', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter = {};
       sparksd.subscribe('hashblock', emitter);
       sparksd.subscriptions.hashblock[0].should.equal(emitter);
@@ -194,7 +194,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('will remove item from subscriptions', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = {};
       var emitter2 = {};
       var emitter3 = {};
@@ -215,7 +215,7 @@ describe('sparks Service', function() {
       sparksd.subscriptions.hashblock[3].should.equal(emitter5);
     });
     it('will not remove item an already unsubscribed item', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = {};
       var emitter3 = {};
       sparksd.subscriptions.hashblock= [emitter1];
@@ -234,19 +234,19 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('will not an invalid address', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter = new EventEmitter();
       sparksd.subscribeAddress(emitter, ['invalidaddress']);
       should.not.exist(sparksd.subscriptions.address['invalidaddress']);
     });
     it('will add a valid address', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter = new EventEmitter();
       sparksd.subscribeAddress(emitter, ['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi']);
       should.exist(sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi']);
     });
     it('will handle multiple address subscribers', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = new EventEmitter();
       var emitter2 = new EventEmitter();
       sparksd.subscribeAddress(emitter1, ['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi']);
@@ -255,7 +255,7 @@ describe('sparks Service', function() {
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'].length.should.equal(2);
     });
     it('will not add the same emitter twice', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = new EventEmitter();
       sparksd.subscribeAddress(emitter1, ['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi']);
       sparksd.subscribeAddress(emitter1, ['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi']);
@@ -273,7 +273,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('it will remove a subscription', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = new EventEmitter();
       var emitter2 = new EventEmitter();
       sparksd.subscribeAddress(emitter1, ['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi']);
@@ -284,7 +284,7 @@ describe('sparks Service', function() {
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'].length.should.equal(1);
     });
     it('will unsubscribe subscriptions for an emitter', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = new EventEmitter();
       var emitter2 = new EventEmitter();
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'] = [emitter1, emitter2];
@@ -292,7 +292,7 @@ describe('sparks Service', function() {
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'].length.should.equal(1);
     });
     it('will NOT unsubscribe subscription with missing address', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = new EventEmitter();
       var emitter2 = new EventEmitter();
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'] = [emitter1, emitter2];
@@ -300,7 +300,7 @@ describe('sparks Service', function() {
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'].length.should.equal(2);
     });
     it('will NOT unsubscribe subscription with missing emitter', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = new EventEmitter();
       var emitter2 = new EventEmitter();
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'] = [emitter2];
@@ -309,7 +309,7 @@ describe('sparks Service', function() {
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'][0].should.equal(emitter2);
     });
     it('will remove empty addresses', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = new EventEmitter();
       var emitter2 = new EventEmitter();
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'] = [emitter1, emitter2];
@@ -318,7 +318,7 @@ describe('sparks Service', function() {
       should.not.exist(sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi']);
     });
     it('will unsubscribe emitter for all addresses', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = new EventEmitter();
       var emitter2 = new EventEmitter();
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'] = [emitter1, emitter2];
@@ -340,7 +340,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('will unsubscribe emitter for all addresses', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var emitter1 = new EventEmitter();
       var emitter2 = new EventEmitter();
       sparksd.subscriptions.address['8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi'] = [emitter1, emitter2];
@@ -357,9 +357,9 @@ describe('sparks Service', function() {
 
   describe('#_getDefaultConfig', function() {
     it('will generate config file from defaults', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var config = sparksd._getDefaultConfig();
-      config.should.equal(defaultsparksConf);
+      config.should.equal(defaultSparksConf);
     });
   });
 
@@ -372,7 +372,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('will parse a sparks.conf file', function() {
-      var Testsparks = proxyquire('../../lib/services/sparksd', {
+      var TestSparks = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFileSync: readFileSync,
           existsSync: sinon.stub().returns(true),
@@ -382,7 +382,7 @@ describe('sparks Service', function() {
           sync: sinon.stub()
         }
       });
-      var sparksd = new Testsparks(baseConfig);
+      var sparksd = new TestSparks(baseConfig);
       sparksd.options.spawn.datadir = '/tmp/.sparks';
       var node = {};
       sparksd._loadSpawnConfiguration(node);
@@ -409,7 +409,7 @@ describe('sparks Service', function() {
       });
     });
     it('will expand relative datadir to absolute path', function() {
-      var Testsparks = proxyquire('../../lib/services/sparksd', {
+      var TestSparks = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFileSync: readFileSync,
           existsSync: sinon.stub().returns(true),
@@ -429,14 +429,14 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new Testsparks(config);
+      var sparksd = new TestSparks(config);
       sparksd.options.spawn.datadir = './data';
       var node = {};
       sparksd._loadSpawnConfiguration(node);
       sparksd.options.spawn.datadir.should.equal('/tmp/.sparkscore/data');
     });
     it('should throw an exception if txindex isn\'t enabled in the configuration', function() {
-      var Testsparks = proxyquire('../../lib/services/sparksd', {
+      var TestSparks = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFileSync: sinon.stub().returns(fs.readFileSync(__dirname + '/../data/badsparks.conf')),
           existsSync: sinon.stub().returns(true),
@@ -445,16 +445,16 @@ describe('sparks Service', function() {
           sync: sinon.stub()
         }
       });
-      var sparksd = new Testsparks(baseConfig);
+      var sparksd = new TestSparks(baseConfig);
       (function() {
         sparksd._loadSpawnConfiguration({datadir: './test'});
       }).should.throw(sparkscore.errors.InvalidState);
     });
     it('should NOT set https options if node https options are set', function() {
       var writeFileSync = function(path, config) {
-        config.should.equal(defaultsparksConf);
+        config.should.equal(defaultSparksConf);
       };
-      var Testsparks = proxyquire('../../lib/services/sparksd', {
+      var TestSparks = proxyquire('../../lib/services/sparksd', {
         fs: {
           writeFileSync: writeFileSync,
           readFileSync: readFileSync,
@@ -480,7 +480,7 @@ describe('sparks Service', function() {
           exec: 'testexec'
         }
       };
-      var sparksd = new Testsparks(config);
+      var sparksd = new TestSparks(config);
       sparksd.options.spawn.datadir = '/tmp/.sparks';
       var node = {};
       sparksd._loadSpawnConfiguration(node);
@@ -496,7 +496,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('should warn the user if reindex is set to 1 in the sparks.conf file', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var config = {
         txindex: 1,
         addressindex: 1,
@@ -513,7 +513,7 @@ describe('sparks Service', function() {
       node._reindex.should.equal(true);
     });
     it('should warn if zmq port and hosts do not match', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var config = {
         txindex: 1,
         addressindex: 1,
@@ -533,7 +533,7 @@ describe('sparks Service', function() {
 
   describe('#_resetCaches', function() {
     it('will reset LRU caches', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var keys = [];
       for (var i = 0; i < 10; i++) {
         keys.push(crypto.randomBytes(32));
@@ -554,7 +554,7 @@ describe('sparks Service', function() {
 
   describe('#_tryAllClients', function() {
     it('will retry for each node client', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.tryAllInterval = 1;
       sparksd.nodes.push({
         client: {
@@ -584,7 +584,7 @@ describe('sparks Service', function() {
       });
     });
     it('will start using the current node index (round-robin)', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.tryAllInterval = 1;
       sparksd.nodes.push({
         client: {
@@ -615,7 +615,7 @@ describe('sparks Service', function() {
       });
     });
     it('will get error if all clients fail', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.tryAllInterval = 1;
       sparksd.nodes.push({
         client: {
@@ -645,7 +645,7 @@ describe('sparks Service', function() {
 
   describe('#_wrapRPCError', function() {
     it('will convert bitcored-rpc-sparks object into JavaScript error', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var error = sparksd._wrapRPCError({message: 'Test error', code: -1});
       error.should.be.an.instanceof(errors.RPCError);
       error.code.should.equal(-1);
@@ -662,7 +662,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('will set height and genesis buffer', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var genesisBuffer = new Buffer([]);
       sparksd.getRawBlock = sinon.stub().callsArgWith(1, null, genesisBuffer);
       sparksd.nodes.push({
@@ -698,7 +698,7 @@ describe('sparks Service', function() {
       });
     });
     it('it will handle error from getBestBlockHash', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBestBlockHash = sinon.stub().callsArgWith(0, {code: -1, message: 'error'});
       sparksd.nodes.push({
         client: {
@@ -711,7 +711,7 @@ describe('sparks Service', function() {
       });
     });
     it('it will handle error from getBlock', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBestBlockHash = sinon.stub().callsArgWith(0, null, {});
       var getBlock = sinon.stub().callsArgWith(1, {code: -1, message: 'error'});
       sparksd.nodes.push({
@@ -726,7 +726,7 @@ describe('sparks Service', function() {
       });
     });
     it('it will handle error from getBlockHash', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBestBlockHash = sinon.stub().callsArgWith(0, null, {});
       var getBlock = sinon.stub().callsArgWith(1, null, {
         result: {
@@ -747,7 +747,7 @@ describe('sparks Service', function() {
       });
     });
     it('it will handle error from getRawBlock', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBestBlockHash = sinon.stub().callsArgWith(0, null, {});
       var getBlock = sinon.stub().callsArgWith(1, null, {
         result: {
@@ -785,7 +785,7 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new sparksService(config);
+      var sparksd = new SparksService(config);
       sparksd._getDefaultConf().rpcport.should.equal(9998);
     });
     it('will get default rpc port for testnet', function() {
@@ -798,7 +798,7 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new sparksService(config);
+      var sparksd = new SparksService(config);
       sparksd._getDefaultConf().rpcport.should.equal(19998);
     });
     it('will get default rpc port for regtest', function() {
@@ -812,7 +812,7 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new sparksService(config);
+      var sparksd = new SparksService(config);
       sparksd._getDefaultConf().rpcport.should.equal(19998);
     });
   });
@@ -832,7 +832,7 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new sparksService(config);
+      var sparksd = new SparksService(config);
       should.equal(sparksd._getNetworkConfigPath(), undefined);
     });
     it('will get default rpc port for testnet', function() {
@@ -845,7 +845,7 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new sparksService(config);
+      var sparksd = new SparksService(config);
       sparksd._getNetworkConfigPath().should.equal('testnet3/sparks.conf');
     });
     it('will get default rpc port for regtest', function() {
@@ -859,7 +859,7 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new sparksService(config);
+      var sparksd = new SparksService(config);
       sparksd._getNetworkConfigPath().should.equal('regtest/sparks.conf');
     });
   });
@@ -870,18 +870,18 @@ describe('sparks Service', function() {
       baseConfig.node.network = sparkscore.Networks.testnet;
     });
     it('return --testnet for testnet', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.node.network = sparkscore.Networks.testnet;
       sparksd._getNetworkOption().should.equal('--testnet');
     });
     it('return --regtest for testnet', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.node.network = sparkscore.Networks.testnet;
       sparkscore.Networks.enableRegtest();
       sparksd._getNetworkOption().should.equal('--regtest');
     });
     it('return undefined for livenet', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.node.network = sparkscore.Networks.livenet;
       sparkscore.Networks.enableRegtest();
       should.equal(sparksd._getNetworkOption(), undefined);
@@ -890,7 +890,7 @@ describe('sparks Service', function() {
 
   describe('#_zmqBlockHandler', function() {
     it('will emit block', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var node = {};
       var message = new Buffer('00000000002e08fc7ae9a9aa5380e95e2adcdc5752a4a66a7d3a22466bd4e6aa', 'hex');
       sparksd._rapidProtectedUpdateTip = sinon.stub();
@@ -901,7 +901,7 @@ describe('sparks Service', function() {
       sparksd._zmqBlockHandler(node, message);
     });
     it('will not emit same block twice', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var node = {};
       var message = new Buffer('00000000002e08fc7ae9a9aa5380e95e2adcdc5752a4a66a7d3a22466bd4e6aa', 'hex');
       sparksd._rapidProtectedUpdateTip = sinon.stub();
@@ -913,7 +913,7 @@ describe('sparks Service', function() {
       sparksd._zmqBlockHandler(node, message);
     });
     it('will call function to update tip', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var node = {};
       var message = new Buffer('00000000002e08fc7ae9a9aa5380e95e2adcdc5752a4a66a7d3a22466bd4e6aa', 'hex');
       sparksd._rapidProtectedUpdateTip = sinon.stub();
@@ -923,7 +923,7 @@ describe('sparks Service', function() {
       sparksd._rapidProtectedUpdateTip.args[0][1].should.equal(message);
     });
     it('will emit to subscribers', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var node = {};
       var message = new Buffer('00000000002e08fc7ae9a9aa5380e95e2adcdc5752a4a66a7d3a22466bd4e6aa', 'hex');
       sparksd._rapidProtectedUpdateTip = sinon.stub();
@@ -939,7 +939,7 @@ describe('sparks Service', function() {
 
   describe('#_rapidProtectedUpdateTip', function() {
     it('will limit tip updates with rapid calls', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var callCount = 0;
       sparksd._updateTip = function() {
         callCount++;
@@ -973,7 +973,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('log and emit rpc error from get block', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub();
       sparksd.on('error', function(err) {
         err.code.should.equal(-1);
@@ -989,7 +989,7 @@ describe('sparks Service', function() {
       sparksd._updateTip(node, message);
     });
     it('emit synced if percentage is 100', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub().callsArgWith(0, null, 100);
       sparksd.on('synced', function() {
         done();
@@ -1002,7 +1002,7 @@ describe('sparks Service', function() {
       sparksd._updateTip(node, message);
     });
     it('NOT emit synced if percentage is less than 100', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub().callsArgWith(0, null, 99);
       sparksd.on('synced', function() {
         throw new Error('Synced called');
@@ -1017,7 +1017,7 @@ describe('sparks Service', function() {
       done();
     });
     it('log and emit error from syncPercentage', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub().callsArgWith(0, new Error('test'));
       sparksd.on('error', function(err) {
         log.error.callCount.should.equal(1);
@@ -1032,7 +1032,7 @@ describe('sparks Service', function() {
       sparksd._updateTip(node, message);
     });
     it('reset caches and set height', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub();
       sparksd._resetCaches = sinon.stub();
       sparksd.on('tip', function(height) {
@@ -1053,7 +1053,7 @@ describe('sparks Service', function() {
       sparksd._updateTip(node, message);
     });
     it('will NOT update twice for the same hash', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub();
       sparksd._resetCaches = sinon.stub();
       sparksd.on('tip', function() {
@@ -1081,7 +1081,7 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new sparksService(config);
+      var sparksd = new SparksService(config);
       sparksd.syncPercentage = sinon.stub();
       sparksd._resetCaches = sinon.stub();
       sparksd.node.stopping = true;
@@ -1104,7 +1104,7 @@ describe('sparks Service', function() {
 
   describe('#_getAddressesFromTransaction', function() {
     it('will get results using sparkscore.Transaction', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var wif = 'XGLgPK8gbmzU7jcbw34Pj55AXV7SmG6carKuiwtu4WtvTjyTbpwX';
       var privkey = sparkscore.PrivateKey.fromWIF(wif);
       var inputAddress = privkey.toAddress(sparkscore.Networks.testnet);
@@ -1125,7 +1125,7 @@ describe('sparks Service', function() {
       addresses[1].should.equal(outputAddress.toString());
     });
     it('will handle non-standard script types', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var tx = sparkscore.Transaction();
       tx.addInput(sparkscore.Transaction.Input({
         prevTxId: '4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b',
@@ -1144,7 +1144,7 @@ describe('sparks Service', function() {
       addresses.length.should.equal(0);
     });
     it('will handle unparsable script types or missing input script', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var tx = sparkscore.Transaction();
       tx.addOutput(sparkscore.Transaction.Output({
         script: new Buffer('4c', 'hex'),
@@ -1154,7 +1154,7 @@ describe('sparks Service', function() {
       addresses.length.should.equal(0);
     });
     it('will return unique values', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var tx = sparkscore.Transaction();
       var address = sparkscore.Address('8oUSpiq5REeEKAzS1qSXoJbZ9TRfH1L6mi');
       tx.addOutput(sparkscore.Transaction.Output({
@@ -1172,7 +1172,7 @@ describe('sparks Service', function() {
 
   describe('#_notifyAddressTxidSubscribers', function() {
     it('will emit event if matching addresses', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var address = 'XnQuJpAgEDNtRwoXWLfuEs69cMgCYS8rgs';
       sparksd._getAddressesFromTransaction = sinon.stub().returns([address]);
       var emitter = new EventEmitter();
@@ -1189,7 +1189,7 @@ describe('sparks Service', function() {
       emitter.emit.callCount.should.equal(1);
     });
     it('will NOT emit event without matching addresses', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var address = 'XnQuJpAgEDNtRwoXWLfuEs69cMgCYS8rgs';
       sparksd._getAddressesFromTransaction = sinon.stub().returns([address]);
       var emitter = new EventEmitter();
@@ -1203,7 +1203,7 @@ describe('sparks Service', function() {
 
   describe('#_zmqTransactionHandler', function() {
     it('will emit to subscribers', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var expectedBuffer = new Buffer(txhex, 'hex');
       var emitter = new EventEmitter();
       sparksd.subscriptions.rawtransaction.push(emitter);
@@ -1216,7 +1216,7 @@ describe('sparks Service', function() {
       sparksd._zmqTransactionHandler(node, expectedBuffer);
     });
     it('will NOT emit to subscribers more than once for the same tx', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var expectedBuffer = new Buffer(txhex, 'hex');
       var emitter = new EventEmitter();
       sparksd.subscriptions.rawtransaction.push(emitter);
@@ -1228,7 +1228,7 @@ describe('sparks Service', function() {
       sparksd._zmqTransactionHandler(node, expectedBuffer);
     });
     it('will emit "tx" event', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var expectedBuffer = new Buffer(txhex, 'hex');
       sparksd.on('tx', function(buffer) {
         buffer.should.be.instanceof(Buffer);
@@ -1239,7 +1239,7 @@ describe('sparks Service', function() {
       sparksd._zmqTransactionHandler(node, expectedBuffer);
     });
     it('will NOT emit "tx" event more than once for the same tx', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var expectedBuffer = new Buffer(txhex, 'hex');
       sparksd.on('tx', function() {
         done();
@@ -1253,7 +1253,7 @@ describe('sparks Service', function() {
   // TODO: transaction lock test coverage
   describe('#_zmqTransactionLockHandler', function() {
     it('will emit to subscribers', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var expectedBuffer = new Buffer(txhex, 'hex');
       var emitter = new EventEmitter();
       sparksd.subscriptions.transactionlock.push(emitter);
@@ -1266,7 +1266,7 @@ describe('sparks Service', function() {
       sparksd._zmqTransactionLockHandler(node, expectedBuffer);
     });
     it('will NOT emit to subscribers more than once for the same tx', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var expectedBuffer = new Buffer(txhex, 'hex');
       var emitter = new EventEmitter();
       sparksd.subscriptions.transactionlock.push(emitter);
@@ -1278,7 +1278,7 @@ describe('sparks Service', function() {
       sparksd._zmqTransactionLockHandler(node, expectedBuffer);
     });
     it('will emit "tx" event', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var expectedBuffer = new Buffer(txhex, 'hex');
       sparksd.on('txlock', function(buffer) {
         buffer.should.be.instanceof(Buffer);
@@ -1289,7 +1289,7 @@ describe('sparks Service', function() {
       sparksd._zmqTransactionLockHandler(node, expectedBuffer);
     });
     it('will NOT emit "tx" event more than once for the same tx', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var expectedBuffer = new Buffer(txhex, 'hex');
       sparksd.on('txlock', function() {
         done();
@@ -1309,7 +1309,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('log errors, update tip and subscribe to zmq events', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._updateTip = sinon.stub();
       sparksd._subscribeZmqEvents = sinon.stub();
       var blockEvents = 0;
@@ -1363,7 +1363,7 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new sparksService(config);
+      var sparksd = new SparksService(config);
       var getBestBlockHash = sinon.stub().callsArgWith(0, {code: -1, message: 'error'});
       var node = {
         _tipUpdateInterval: 1,
@@ -1382,7 +1382,7 @@ describe('sparks Service', function() {
       }, 100);
     });
     it('will not set interval if synced is true', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._updateTip = sinon.stub();
       sparksd._subscribeZmqEvents = sinon.stub();
       var getBestBlockHash = sinon.stub().callsArgWith(0, null, {
@@ -1412,7 +1412,7 @@ describe('sparks Service', function() {
 
   describe('#_subscribeZmqEvents', function() {
     it('will call subscribe on zmq socket', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var node = {
         zmqSubSocket: {
           subscribe: sinon.stub(),
@@ -1426,7 +1426,7 @@ describe('sparks Service', function() {
       node.zmqSubSocket.subscribe.args[2][0].should.equal('rawtxlock');
     });
     it('will call relevant handler for rawtx topics', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._zmqTransactionHandler = sinon.stub();
       var node = {
         zmqSubSocket: new EventEmitter()
@@ -1442,7 +1442,7 @@ describe('sparks Service', function() {
       node.zmqSubSocket.emit('message', topic, message);
     });
     it('will call relevant handler for hashblock topics', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._zmqBlockHandler = sinon.stub();
       var node = {
         zmqSubSocket: new EventEmitter()
@@ -1458,7 +1458,7 @@ describe('sparks Service', function() {
       node.zmqSubSocket.emit('message', topic, message);
     });
     it('will ignore unknown topic types', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._zmqBlockHandler = sinon.stub();
       sparksd._zmqTransactionHandler = sinon.stub();
       var node = {
@@ -1485,12 +1485,12 @@ describe('sparks Service', function() {
       var socketFunc = function() {
         return socket;
       };
-      var sparksService = proxyquire('../../lib/services/sparksd', {
-        zmq: {
+      var SparksService = proxyquire('../../lib/services/sparksd', {
+        zeromq: {
           socket: socketFunc
         }
       });
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var node = {};
       sparksd._initZmqSubSocket(node, 'url');
       node.zmqSubSocket.should.equal(socket);
@@ -1511,7 +1511,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('give error from client getblockchaininfo', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var node = {
         _reindex: true,
         _reindexWait: 1,
@@ -1526,7 +1526,7 @@ describe('sparks Service', function() {
       });
     });
     it('will wait until sync is 100 percent', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var percent = 0.89;
       var node = {
         _reindex: true,
@@ -1549,7 +1549,7 @@ describe('sparks Service', function() {
       });
     });
     it('will call callback if reindex is not enabled', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var node = {
         _reindex: false
       };
@@ -1569,7 +1569,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('will give rpc from client getbestblockhash', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBestBlockHash = sinon.stub().callsArgWith(0, {code: -1, message: 'Test error'});
       var node = {
         client: {
@@ -1583,7 +1583,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give rpc from client getblock', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBestBlockHash = sinon.stub().callsArgWith(0, null, {
         result: '00000000000000001bb82a7f5973618cfd3185ba1ded04dd852a653f92a27c45'
       });
@@ -1602,7 +1602,7 @@ describe('sparks Service', function() {
       });
     });
     it('will log when error is RPC_IN_WARMUP', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBestBlockHash = sinon.stub().callsArgWith(0, {code: -28, message: 'Verifying blocks...'});
       var node = {
         client: {
@@ -1616,7 +1616,7 @@ describe('sparks Service', function() {
       });
     });
     it('will set height and emit tip', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBestBlockHash = sinon.stub().callsArgWith(0, null, {
         result: '00000000000000001bb82a7f5973618cfd3185ba1ded04dd852a653f92a27c45'
       });
@@ -1658,16 +1658,16 @@ describe('sparks Service', function() {
       var error = new Error('Test error');
       error.code = 'ENOENT';
       readFile.onCall(1).callsArgWith(2, error);
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFile: readFile
         }
       });
-      var sparksd = new TestsparksService(baseConfig);
+      var sparksd = new TestSparksService(baseConfig);
       sparksd.spawnStopTime = 1;
       sparksd._process = {};
       sparksd._process.kill = sinon.stub();
-      sparksd._stopSpawnedsparks(function(err) {
+      sparksd._stopSpawnedSparks(function(err) {
         if (err) {
           return done(err);
         }
@@ -1682,18 +1682,18 @@ describe('sparks Service', function() {
       var error = new Error('Test error');
       error.code = 'ENOENT';
       readFile.onCall(1).callsArgWith(2, error);
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFile: readFile
         }
       });
-      var sparksd = new TestsparksService(baseConfig);
+      var sparksd = new TestSparksService(baseConfig);
       sparksd.spawnStopTime = 1;
       sparksd._process = {};
       var error2 = new Error('Test error');
       error2.code = 'ESRCH';
       sparksd._process.kill = sinon.stub().throws(error2);
-      sparksd._stopSpawnedsparks(function(err) {
+      sparksd._stopSpawnedSparks(function(err) {
         if (err) {
           return done(err);
         }
@@ -1705,16 +1705,16 @@ describe('sparks Service', function() {
     it('it will attempt to kill process with NaN', function(done) {
       var readFile = sandbox.stub();
       readFile.onCall(0).callsArgWith(2, null, '     ');
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFile: readFile
         }
       });
-      var sparksd = new TestsparksService(baseConfig);
+      var sparksd = new TestSparksService(baseConfig);
       sparksd.spawnStopTime = 1;
       sparksd._process = {};
       sparksd._process.kill = sinon.stub();
-      sparksd._stopSpawnedsparks(function(err) {
+      sparksd._stopSpawnedSparks(function(err) {
         if (err) {
           return done(err);
         }
@@ -1724,16 +1724,16 @@ describe('sparks Service', function() {
     it('it will attempt to kill process without pid', function(done) {
       var readFile = sandbox.stub();
       readFile.onCall(0).callsArgWith(2, null, '');
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFile: readFile
         }
       });
-      var sparksd = new TestsparksService(baseConfig);
+      var sparksd = new TestSparksService(baseConfig);
       sparksd.spawnStopTime = 1;
       sparksd._process = {};
       sparksd._process.kill = sinon.stub();
-      sparksd._stopSpawnedsparks(function(err) {
+      sparksd._stopSpawnedSparks(function(err) {
         if (err) {
           return done(err);
         }
@@ -1753,7 +1753,7 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('will give error from spawn config', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._loadSpawnConfiguration = sinon.stub();
       sparksd._loadSpawnConfiguration = sinon.stub().throws(new Error('test'));
       sparksd._spawnChildProcess(function(err) {
@@ -1762,10 +1762,10 @@ describe('sparks Service', function() {
         done();
       });
     });
-    it('will give error from stopSpawnedsparks', function() {
-      var sparksd = new sparksService(baseConfig);
+    it('will give error from stopSpawnedSparks', function() {
+      var sparksd = new SparksService(baseConfig);
       sparksd._loadSpawnConfiguration = sinon.stub();
-      sparksd._stopSpawnedsparks = sinon.stub().callsArgWith(0, new Error('test'));
+      sparksd._stopSpawnedSparks = sinon.stub().callsArgWith(0, new Error('test'));
       sparksd._spawnChildProcess(function(err) {
         err.should.be.instanceOf(Error);
         err.message.should.equal('test');
@@ -1783,7 +1783,7 @@ describe('sparks Service', function() {
       };
       var process = new EventEmitter();
       var spawn = sinon.stub().returns(process);
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFileSync: readFileSync
         },
@@ -1791,10 +1791,10 @@ describe('sparks Service', function() {
           spawn: spawn
         }
       });
-      var sparksd = new TestsparksService(config);
+      var sparksd = new TestSparksService(config);
       sparksd.spawn = {};
       sparksd._loadSpawnConfiguration = sinon.stub();
-      sparksd._stopSpawnedsparks = sinon.stub().callsArgWith(0, null);
+      sparksd._stopSpawnedSparks = sinon.stub().callsArgWith(0, null);
       sparksd.node.stopping = true;
       sparksd._spawnChildProcess(function(err) {
         err.should.be.instanceOf(Error);
@@ -1804,7 +1804,7 @@ describe('sparks Service', function() {
     it('will include network with spawn command and init zmq/rpc on node', function(done) {
       var process = new EventEmitter();
       var spawn = sinon.stub().returns(process);
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFileSync: readFileSync
         },
@@ -1812,7 +1812,7 @@ describe('sparks Service', function() {
           spawn: spawn
         }
       });
-      var sparksd = new TestsparksService(baseConfig);
+      var sparksd = new TestSparksService(baseConfig);
 
       sparksd._loadSpawnConfiguration = sinon.stub();
       sparksd.spawn = {};
@@ -1856,7 +1856,7 @@ describe('sparks Service', function() {
     it('will respawn sparksd spawned process', function(done) {
       var process = new EventEmitter();
       var spawn = sinon.stub().returns(process);
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFileSync: readFileSync
         },
@@ -1864,7 +1864,7 @@ describe('sparks Service', function() {
           spawn: spawn
         }
       });
-      var sparksd = new TestsparksService(baseConfig);
+      var sparksd = new TestSparksService(baseConfig);
       sparksd._loadSpawnConfiguration = sinon.stub();
       sparksd.spawn = {};
       sparksd.spawn.exec = 'sparksd';
@@ -1876,7 +1876,7 @@ describe('sparks Service', function() {
       sparksd._initZmqSubSocket = sinon.stub();
       sparksd._checkReindex = sinon.stub().callsArg(1);
       sparksd._checkSyncedAndSubscribeZmqEvents = sinon.stub();
-      sparksd._stopSpawnedsparks = sinon.stub().callsArg(0);
+      sparksd._stopSpawnedSparks = sinon.stub().callsArg(0);
       sinon.spy(sparksd, '_spawnChildProcess');
       sparksd._spawnChildProcess(function(err) {
         if (err) {
@@ -1894,7 +1894,7 @@ describe('sparks Service', function() {
     it('will emit error during respawn', function(done) {
       var process = new EventEmitter();
       var spawn = sinon.stub().returns(process);
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFileSync: readFileSync
         },
@@ -1902,7 +1902,7 @@ describe('sparks Service', function() {
           spawn: spawn
         }
       });
-      var sparksd = new TestsparksService(baseConfig);
+      var sparksd = new TestSparksService(baseConfig);
       sparksd._loadSpawnConfiguration = sinon.stub();
       sparksd.spawn = {};
       sparksd.spawn.exec = 'sparksd';
@@ -1914,7 +1914,7 @@ describe('sparks Service', function() {
       sparksd._initZmqSubSocket = sinon.stub();
       sparksd._checkReindex = sinon.stub().callsArg(1);
       sparksd._checkSyncedAndSubscribeZmqEvents = sinon.stub();
-      sparksd._stopSpawnedsparks = sinon.stub().callsArg(0);
+      sparksd._stopSpawnedSparks = sinon.stub().callsArg(0);
       sinon.spy(sparksd, '_spawnChildProcess');
       sparksd._spawnChildProcess(function(err) {
         if (err) {
@@ -1932,7 +1932,7 @@ describe('sparks Service', function() {
     it('will NOT respawn sparksd spawned process if shutting down', function(done) {
       var process = new EventEmitter();
       var spawn = sinon.stub().returns(process);
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFileSync: readFileSync
         },
@@ -1949,7 +1949,7 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new TestsparksService(config);
+      var sparksd = new TestSparksService(config);
       sparksd._loadSpawnConfiguration = sinon.stub();
       sparksd.spawn = {};
       sparksd.spawn.exec = 'sparksd';
@@ -1961,7 +1961,7 @@ describe('sparks Service', function() {
       sparksd._initZmqSubSocket = sinon.stub();
       sparksd._checkReindex = sinon.stub().callsArg(1);
       sparksd._checkSyncedAndSubscribeZmqEvents = sinon.stub();
-      sparksd._stopSpawnedsparks = sinon.stub().callsArg(0);
+      sparksd._stopSpawnedSparks = sinon.stub().callsArg(0);
       sinon.spy(sparksd, '_spawnChildProcess');
       sparksd._spawnChildProcess(function(err) {
         if (err) {
@@ -1980,7 +1980,7 @@ describe('sparks Service', function() {
     it('will give error after 60 retries', function(done) {
       var process = new EventEmitter();
       var spawn = sinon.stub().returns(process);
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFileSync: readFileSync
         },
@@ -1988,7 +1988,7 @@ describe('sparks Service', function() {
           spawn: spawn
         }
       });
-      var sparksd = new TestsparksService(baseConfig);
+      var sparksd = new TestSparksService(baseConfig);
       sparksd.startRetryInterval = 1;
       sparksd._loadSpawnConfiguration = sinon.stub();
       sparksd.spawn = {};
@@ -2011,7 +2011,7 @@ describe('sparks Service', function() {
     it('will give error from check reindex', function(done) {
       var process = new EventEmitter();
       var spawn = sinon.stub().returns(process);
-      var TestsparksService = proxyquire('../../lib/services/sparksd', {
+      var TestSparksService = proxyquire('../../lib/services/sparksd', {
         fs: {
           readFileSync: readFileSync
         },
@@ -2019,7 +2019,7 @@ describe('sparks Service', function() {
           spawn: spawn
         }
       });
-      var sparksd = new TestsparksService(baseConfig);
+      var sparksd = new TestSparksService(baseConfig);
 
       sparksd._loadSpawnConfiguration = sinon.stub();
       sparksd.spawn = {};
@@ -2056,7 +2056,7 @@ describe('sparks Service', function() {
           exec: 'testpath'
         }
       };
-      var sparksd = new sparksService(config);
+      var sparksd = new SparksService(config);
       sparksd.node.stopping = true;
       sparksd.startRetryInterval = 100;
       sparksd._loadTipFromNode = sinon.stub();
@@ -2068,7 +2068,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give error from loadTipFromNode after 60 retries', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._loadTipFromNode = sinon.stub().callsArgWith(1, new Error('test'));
       sparksd.startRetryInterval = 1;
       var config = {};
@@ -2079,7 +2079,7 @@ describe('sparks Service', function() {
       });
     });
     it('will init zmq/rpc on node', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._initZmqSubSocket = sinon.stub();
       sparksd._subscribeZmqEvents = sinon.stub();
       sparksd._loadTipFromNode = sinon.stub().callsArgWith(1, null);
@@ -2105,16 +2105,16 @@ describe('sparks Service', function() {
       sandbox.restore();
     });
     it('will give error if "spawn" and "connect" are both not configured', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.options = {};
       sparksd.start(function(err) {
         err.should.be.instanceof(Error);
-        err.message.should.match(/sparks configuration options/);
+        err.message.should.match(/Sparks configuration options/);
       });
       done();
     });
     it('will give error from spawnChildProcess', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._spawnChildProcess = sinon.stub().callsArgWith(0, new Error('test'));
       sparksd.options = {
         spawn: {}
@@ -2126,7 +2126,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give error from connectProcess', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._connectProcess = sinon.stub().callsArgWith(1, new Error('test'));
       sparksd.options = {
         connect: [
@@ -2141,7 +2141,7 @@ describe('sparks Service', function() {
       });
     });
     it('will push node from spawnChildProcess', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var node = {};
       sparksd._initChain = sinon.stub().callsArg(0);
       sparksd._spawnChildProcess = sinon.stub().callsArgWith(0, null, node);
@@ -2155,7 +2155,7 @@ describe('sparks Service', function() {
       });
     });
     it('will push node from connectProcess', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._initChain = sinon.stub().callsArg(0);
       var nodes = [{}];
       sparksd._connectProcess = sinon.stub().callsArgWith(1, null, nodes);
@@ -2175,7 +2175,7 @@ describe('sparks Service', function() {
 
   describe('#isSynced', function() {
     it('will give error from syncPercentage', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub().callsArgWith(0, new Error('test'));
       sparksd.isSynced(function(err) {
         should.exist(err);
@@ -2184,7 +2184,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give "true" if percentage is 100.00', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub().callsArgWith(0, null, 100.00);
       sparksd.isSynced(function(err, synced) {
         if (err) {
@@ -2195,7 +2195,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give "true" if percentage is 99.98', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub().callsArgWith(0, null, 99.98);
       sparksd.isSynced(function(err, synced) {
         if (err) {
@@ -2206,7 +2206,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give "false" if percentage is 99.49', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub().callsArgWith(0, null, 99.49);
       sparksd.isSynced(function(err, synced) {
         if (err) {
@@ -2217,7 +2217,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give "false" if percentage is 1', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.syncPercentage = sinon.stub().callsArgWith(0, null, 1);
       sparksd.isSynced(function(err, synced) {
         if (err) {
@@ -2231,7 +2231,7 @@ describe('sparks Service', function() {
 
   describe('#syncPercentage', function() {
     it('will give rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockchainInfo = sinon.stub().callsArgWith(0, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -2245,7 +2245,7 @@ describe('sparks Service', function() {
       });
     });
     it('will call client getInfo and give result', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockchainInfo = sinon.stub().callsArgWith(0, null, {
         result: {
           verificationprogress: '0.983821387'
@@ -2268,12 +2268,12 @@ describe('sparks Service', function() {
 
   describe('#_normalizeAddressArg', function() {
     it('will turn single address into array', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var args = sparksd._normalizeAddressArg('address');
       args.should.deep.equal(['address']);
     });
     it('will keep an array as an array', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var args = sparksd._normalizeAddressArg(['address', 'address']);
       args.should.deep.equal(['address', 'address']);
     });
@@ -2281,7 +2281,7 @@ describe('sparks Service', function() {
 
   describe('#getAddressBalance', function() {
     it('will give rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressBalance: sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'})
@@ -2295,7 +2295,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give balance', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getAddressBalance = sinon.stub().callsArgWith(1, null, {
         result: {
           received: 100000,
@@ -2330,7 +2330,7 @@ describe('sparks Service', function() {
 
   describe('#getAddressUnspentOutputs', function() {
     it('will give rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressUtxos: sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'})
@@ -2347,7 +2347,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give results from client getaddressutxos', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var expectedUtxos = [
         {
           address: 'XnQuJpAgEDNtRwoXWLfuEs69cMgCYS8rgs',
@@ -2379,7 +2379,7 @@ describe('sparks Service', function() {
       });
     });
     it('will use cache', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var expectedUtxos = [
         {
           address: 'XnQuJpAgEDNtRwoXWLfuEs69cMgCYS8rgs',
@@ -2446,7 +2446,7 @@ describe('sparks Service', function() {
           timestamp: 1461342954813
         }
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var confirmedUtxos = [
         {
           address: 'XnQuJpAgEDNtRwoXWLfuEs69cMgCYS8rgs',
@@ -2519,7 +2519,7 @@ describe('sparks Service', function() {
           prevout: 2
         }
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var confirmedUtxos = [
         {
           address: 'XnQuJpAgEDNtRwoXWLfuEs69cMgCYS8rgs',
@@ -2598,7 +2598,7 @@ describe('sparks Service', function() {
           timestamp: 1461342833133
         }
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var confirmedUtxos = [
         {
           address: 'XnQuJpAgEDNtRwoXWLfuEs69cMgCYS8rgs',
@@ -2705,7 +2705,7 @@ describe('sparks Service', function() {
           timestamp: 1461342833133
         }
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var confirmedUtxos = [];
       sparksd.nodes.push({
         client: {
@@ -2746,7 +2746,7 @@ describe('sparks Service', function() {
           prevout: 1
         }
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var confirmedUtxos = [
         {
           address: 'XnQuJpAgEDNtRwoXWLfuEs69cMgCYS8rgs',
@@ -2789,7 +2789,7 @@ describe('sparks Service', function() {
           timestamp: 1461342707725
         }
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var confirmedUtxos = [
         {
           address: 'XnQuJpAgEDNtRwoXWLfuEs69cMgCYS8rgs',
@@ -2823,7 +2823,7 @@ describe('sparks Service', function() {
       });
     });
     it('it will handle error from getAddressMempool', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressMempool: sinon.stub().callsArgWith(1, {code: -1, message: 'test'})
@@ -2839,7 +2839,7 @@ describe('sparks Service', function() {
       });
     });
     it('should set query mempool if undefined', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getAddressMempool = sinon.stub().callsArgWith(1, {code: -1, message: 'test'});
       sparksd.nodes.push({
         client: {
@@ -2857,7 +2857,7 @@ describe('sparks Service', function() {
 
   describe('#_getBalanceFromMempool', function() {
     it('will sum satoshis', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var deltas = [
         {
           satoshis: -1000,
@@ -2876,7 +2876,7 @@ describe('sparks Service', function() {
 
   describe('#_getTxidsFromMempool', function() {
     it('will filter to txids', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var deltas = [
         {
           txid: 'txid0',
@@ -2895,7 +2895,7 @@ describe('sparks Service', function() {
       txids[2].should.equal('txid2');
     });
     it('will not include duplicates', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var deltas = [
         {
           txid: 'txid0',
@@ -2916,7 +2916,7 @@ describe('sparks Service', function() {
 
   describe('#_getHeightRangeQuery', function() {
     it('will detect range query', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var options = {
         start: 20,
         end: 0
@@ -2925,7 +2925,7 @@ describe('sparks Service', function() {
       rangeQuery.should.equal(true);
     });
     it('will get range properties', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var options = {
         start: 20,
         end: 0
@@ -2936,7 +2936,7 @@ describe('sparks Service', function() {
       clone.start.should.equal(0);
     });
     it('will throw error with invalid range', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var options = {
         start: 0,
         end: 20
@@ -2949,7 +2949,7 @@ describe('sparks Service', function() {
 
   describe('#getAddressTxids', function() {
     it('will give error from _getHeightRangeQuery', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._getHeightRangeQuery = sinon.stub().throws(new Error('test'));
       sparksd.getAddressTxids('address', {}, function(err) {
         err.should.be.instanceOf(Error);
@@ -2958,7 +2958,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give rpc error from mempool query', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressMempool: sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'})
@@ -2972,7 +2972,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give rpc error from txids query', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressTxids: sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'})
@@ -3000,7 +3000,7 @@ describe('sparks Service', function() {
         'ed11a08e3102f9610bda44c80c46781d97936a4290691d87244b1b345b39a693',
         'ec94d845c603f292a93b7c829811ac624b76e52b351617ca5a758e9d61a11681'
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressTxids: sinon.stub().callsArgWith(1, null, {
@@ -3025,7 +3025,7 @@ describe('sparks Service', function() {
       var expectedTxids = [
         'e9dcf22807db77ac0276b03cc2d3a8b03c4837db8ac6650501ef45af1c807cce'
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getAddressTxids = sinon.stub().callsArgWith(1, null, {
         result: expectedTxids.reverse()
       });
@@ -3059,7 +3059,7 @@ describe('sparks Service', function() {
       var expectedTxids = [
         'e9dcf22807db77ac0276b03cc2d3a8b03c4837db8ac6650501ef45af1c807cce'
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getAddressMempool = sinon.stub();
       var getAddressTxids = sinon.stub().callsArgWith(1, null, {
         result: expectedTxids.reverse()
@@ -3099,7 +3099,7 @@ describe('sparks Service', function() {
       var expectedTxids = [
         'e9dcf22807db77ac0276b03cc2d3a8b03c4837db8ac6650501ef45af1c807cce'
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getAddressTxids = sinon.stub().callsArgWith(1, null, {
         result: expectedTxids.reverse()
       });
@@ -3158,7 +3158,7 @@ describe('sparks Service', function() {
     it('should get 0 confirmation', function() {
       var tx = new Transaction(txhex);
       tx.height = -1;
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.height = 10;
       var confirmations = sparksd._getConfirmationsDetail(tx);
       confirmations.should.equal(0);
@@ -3166,13 +3166,13 @@ describe('sparks Service', function() {
     it('should get 1 confirmation', function() {
       var tx = new Transaction(txhex);
       tx.height = 10;
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.height = 10;
       var confirmations = sparksd._getConfirmationsDetail(tx);
       confirmations.should.equal(1);
     });
     it('should get 2 confirmation', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var tx = new Transaction(txhex);
       sparksd.height = 11;
       tx.height = 10;
@@ -3180,7 +3180,7 @@ describe('sparks Service', function() {
       confirmations.should.equal(2);
     });
     it('should get 0 confirmation with overflow', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var tx = new Transaction(txhex);
       sparksd.height = 3;
       tx.height = 10;
@@ -3189,7 +3189,7 @@ describe('sparks Service', function() {
       confirmations.should.equal(0);
     });
     it('should get 1000 confirmation', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var tx = new Transaction(txhex);
       sparksd.height = 1000;
       tx.height = 1;
@@ -3200,14 +3200,14 @@ describe('sparks Service', function() {
 
   describe('#_getAddressDetailsForInput', function() {
     it('will return if missing an address', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var result = {};
       sparksd._getAddressDetailsForInput({}, 0, result, []);
       should.not.exist(result.addresses);
       should.not.exist(result.satoshis);
     });
     it('will only add address if it matches', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var result = {};
       sparksd._getAddressDetailsForInput({
         address: 'address1'
@@ -3216,7 +3216,7 @@ describe('sparks Service', function() {
       should.not.exist(result.satoshis);
     });
     it('will instantiate if outputIndexes not defined', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var result = {
         addresses: {}
       };
@@ -3228,7 +3228,7 @@ describe('sparks Service', function() {
       result.addresses['address1'].outputIndexes.should.deep.equal([]);
     });
     it('will push to inputIndexes', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var result = {
         addresses: {
           'address1': {
@@ -3246,14 +3246,14 @@ describe('sparks Service', function() {
 
   describe('#_getAddressDetailsForOutput', function() {
     it('will return if missing an address', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var result = {};
       sparksd._getAddressDetailsForOutput({}, 0, result, []);
       should.not.exist(result.addresses);
       should.not.exist(result.satoshis);
     });
     it('will only add address if it matches', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var result = {};
       sparksd._getAddressDetailsForOutput({
         address: 'address1'
@@ -3262,7 +3262,7 @@ describe('sparks Service', function() {
       should.not.exist(result.satoshis);
     });
     it('will instantiate if outputIndexes not defined', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var result = {
         addresses: {}
       };
@@ -3274,7 +3274,7 @@ describe('sparks Service', function() {
       result.addresses['address1'].outputIndexes.should.deep.equal([0]);
     });
     it('will push if outputIndexes defined', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var result = {
         addresses: {
           'address1': {
@@ -3324,7 +3324,7 @@ describe('sparks Service', function() {
         ],
         locktime: 0
       };
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var addresses = ['mgY65WSfEmsyYaYPQaXhmXMeBhwp4EcsQW'];
       var details = sparksd._getAddressDetailsForTransaction(tx, addresses);
       should.exist(details.addresses['mgY65WSfEmsyYaYPQaXhmXMeBhwp4EcsQW']);
@@ -3343,7 +3343,7 @@ describe('sparks Service', function() {
       var tx = {
         height: 20,
       };
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.getDetailedTransaction = sinon.stub().callsArgWith(1, null, tx);
       sparksd.height = 300;
       var addresses = {};
@@ -3364,7 +3364,7 @@ describe('sparks Service', function() {
     });
     it('give error from getDetailedTransaction', function(done) {
       var txid = '46f24e0c274fc07708b781963576c4c5d5625d926dbb0a17fa865dcd9fe58ea0';
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.getDetailedTransaction = sinon.stub().callsArgWith(1, new Error('test'));
       sparksd._getAddressDetailedTransaction(txid, {}, function(err) {
         err.should.be.instanceof(Error);
@@ -3379,7 +3379,7 @@ describe('sparks Service', function() {
         sparkscore.Address('XjxDQFjTNEP9dcrJhBLvy5i1Dobz4x1LJN'),
         sparkscore.Address('7d5169eBcGHF4BYC6DTffTyeCpWbrZnNgz'),
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var strings = sparksd._getAddressStrings(addresses);
       strings[0].should.equal('XjxDQFjTNEP9dcrJhBLvy5i1Dobz4x1LJN');
       strings[1].should.equal('7d5169eBcGHF4BYC6DTffTyeCpWbrZnNgz');
@@ -3389,7 +3389,7 @@ describe('sparks Service', function() {
         'XjxDQFjTNEP9dcrJhBLvy5i1Dobz4x1LJN',
         '7d5169eBcGHF4BYC6DTffTyeCpWbrZnNgz',
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var strings = sparksd._getAddressStrings(addresses);
       strings[0].should.equal('XjxDQFjTNEP9dcrJhBLvy5i1Dobz4x1LJN');
       strings[1].should.equal('7d5169eBcGHF4BYC6DTffTyeCpWbrZnNgz');
@@ -3399,7 +3399,7 @@ describe('sparks Service', function() {
         sparkscore.Address('XjxDQFjTNEP9dcrJhBLvy5i1Dobz4x1LJN'),
         '7d5169eBcGHF4BYC6DTffTyeCpWbrZnNgz',
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var strings = sparksd._getAddressStrings(addresses);
       strings[0].should.equal('XjxDQFjTNEP9dcrJhBLvy5i1Dobz4x1LJN');
       strings[1].should.equal('7d5169eBcGHF4BYC6DTffTyeCpWbrZnNgz');
@@ -3409,7 +3409,7 @@ describe('sparks Service', function() {
         sparkscore.Address('XjxDQFjTNEP9dcrJhBLvy5i1Dobz4x1LJN'),
         0,
       ];
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       (function() {
         sparksd._getAddressStrings(addresses);
       }).should.throw(TypeError);
@@ -3418,32 +3418,32 @@ describe('sparks Service', function() {
 
   describe('#_paginateTxids', function() {
     it('slice txids based on "from" and "to" (3 to 13)', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var txids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
       var paginated = sparksd._paginateTxids(txids, 3, 13);
       paginated.should.deep.equal([3, 4, 5, 6, 7, 8, 9, 10]);
     });
     it('slice txids based on "from" and "to" (0 to 3)', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var txids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
       var paginated = sparksd._paginateTxids(txids, 0, 3);
       paginated.should.deep.equal([0, 1, 2]);
     });
     it('slice txids based on "from" and "to" (0 to 1)', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var txids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
       var paginated = sparksd._paginateTxids(txids, 0, 1);
       paginated.should.deep.equal([0]);
     });
     it('will throw error if "from" is greater than "to"', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var txids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
       (function() {
         sparksd._paginateTxids(txids, 1, 0);
       }).should.throw('"from" (1) is expected to be less than "to"');
     });
     it('will handle string numbers', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var txids = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
       var paginated = sparksd._paginateTxids(txids, '1', '3');
       paginated.should.deep.equal([1, 2]);
@@ -3453,7 +3453,7 @@ describe('sparks Service', function() {
   describe('#getAddressHistory', function() {
     var address = 'XcHw3hNN293dY1AYrbeBrP1sB6vsugTQTz';
     it('will give error with "from" and "to" range that exceeds max size', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.getAddressHistory(address, {from: 0, to: 51}, function(err) {
         should.exist(err);
         err.message.match(/^\"from/);
@@ -3461,7 +3461,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give error with "from" and "to" order is reversed', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.getAddressTxids = sinon.stub().callsArgWith(2, null, []);
       sparksd.getAddressHistory(address, {from: 51, to: 0}, function(err) {
         should.exist(err);
@@ -3470,7 +3470,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give error from _getAddressDetailedTransaction', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.getAddressTxids = sinon.stub().callsArgWith(2, null, ['txid']);
       sparksd._getAddressDetailedTransaction = sinon.stub().callsArgWith(2, new Error('test'));
       sparksd.getAddressHistory(address, {}, function(err) {
@@ -3484,7 +3484,7 @@ describe('sparks Service', function() {
       for (var i = 0; i < 101; i++) {
         addresses.push(address);
       }
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.maxAddressesQuery = 100;
       sparksd.getAddressHistory(addresses, {}, function(err) {
         should.exist(err);
@@ -3493,7 +3493,7 @@ describe('sparks Service', function() {
       });
     });
     it('give error from getAddressTxids', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.getAddressTxids = sinon.stub().callsArgWith(2, new Error('test'));
       sparksd.getAddressHistory('address', {}, function(err) {
         should.exist(err);
@@ -3503,7 +3503,7 @@ describe('sparks Service', function() {
       });
     });
     it('will paginate', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._getAddressDetailedTransaction = function(txid, options, callback) {
         callback(null, txid);
       };
@@ -3527,7 +3527,7 @@ describe('sparks Service', function() {
     var memtxid1 = 'b1bfa8dbbde790cb46b9763ef3407c1a21c8264b67bfe224f462ec0e1f569e92';
     var memtxid2 = 'e9dcf22807db77ac0276b03cc2d3a8b03c4837db8ac6650501ef45af1c807cce';
     it('will handle error from getAddressTxids', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressMempool: sinon.stub().callsArgWith(1, null, {
@@ -3551,7 +3551,7 @@ describe('sparks Service', function() {
       });
     });
     it('will handle error from getAddressBalance', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressMempool: sinon.stub().callsArgWith(1, null, {
@@ -3575,7 +3575,7 @@ describe('sparks Service', function() {
       });
     });
     it('will handle error from client getAddressMempool', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressMempool: sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'})
@@ -3593,7 +3593,7 @@ describe('sparks Service', function() {
       });
     });
     it('should set all properties', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressMempool: sinon.stub().callsArgWith(1, null, {
@@ -3639,7 +3639,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give error with "from" and "to" range that exceeds max size', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressMempool: sinon.stub().callsArgWith(1, null, {
@@ -3673,7 +3673,7 @@ describe('sparks Service', function() {
       });
     });
     it('will get from cache with noTxList', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getAddressMempool: sinon.stub().callsArgWith(1, null, {
@@ -3721,7 +3721,7 @@ describe('sparks Service', function() {
       });
     });
     it('will skip querying the mempool with queryMempool set to false', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getAddressMempool = sinon.stub();
       sparksd.nodes.push({
         client: {
@@ -3744,7 +3744,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give error from _paginateTxids', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getAddressMempool = sinon.stub();
       sparksd.nodes.push({
         client: {
@@ -3774,7 +3774,7 @@ describe('sparks Service', function() {
     var blockhash = '00000000050a6d07f583beba2d803296eb1e9d4980c4a20f206c584e89a4f02b';
     var blockhex = '0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000';
     it('will give rcp error from client getblockhash', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getBlockHash: sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'})
@@ -3787,7 +3787,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give rcp error from client getblock', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getBlock: sinon.stub().callsArgWith(2, {code: -1, message: 'Test error'})
@@ -3800,7 +3800,7 @@ describe('sparks Service', function() {
       });
     });
     it('will try all nodes for getblock', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockWithError = sinon.stub().callsArgWith(2, {code: -1, message: 'Test error'});
       sparksd.tryAllInterval = 1;
       sparksd.nodes.push({
@@ -3832,7 +3832,7 @@ describe('sparks Service', function() {
       });
     });
     it('will get block from cache', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlock = sinon.stub().callsArgWith(2, null, {
         result: blockhex
       });
@@ -3858,7 +3858,7 @@ describe('sparks Service', function() {
       });
     });
     it('will get block by height', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlock = sinon.stub().callsArgWith(2, null, {
         result: blockhex
       });
@@ -3886,7 +3886,7 @@ describe('sparks Service', function() {
   describe('#getBlock', function() {
     var blockhex = '0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5fac00000000';
     it('will give an rpc error from client getblock', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlock = sinon.stub().callsArgWith(2, {code: -1, message: 'Test error'});
       var getBlockHash = sinon.stub().callsArgWith(1, null, {});
       sparksd.nodes.push({
@@ -3901,7 +3901,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give an rpc error from client getblockhash', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHash = sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'});
       sparksd.nodes.push({
         client: {
@@ -3914,7 +3914,7 @@ describe('sparks Service', function() {
       });
     });
     it('will getblock as sparkscore object from height', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlock = sinon.stub().callsArgWith(2, null, {
         result: blockhex
       });
@@ -3936,7 +3936,7 @@ describe('sparks Service', function() {
       });
     });
     it('will getblock as sparkscore object', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlock = sinon.stub().callsArgWith(2, null, {
         result: blockhex
       });
@@ -3958,7 +3958,7 @@ describe('sparks Service', function() {
       });
     });
     it('will get block from cache', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlock = sinon.stub().callsArgWith(2, null, {
         result: blockhex
       });
@@ -3985,7 +3985,7 @@ describe('sparks Service', function() {
       });
     });
     it('will get block from cache with height (but not height)', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlock = sinon.stub().callsArgWith(2, null, {
         result: blockhex
       });
@@ -4016,7 +4016,7 @@ describe('sparks Service', function() {
 
   describe('#getBlockHashesByTimestamp', function() {
     it('should give an rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHashes = sinon.stub().callsArgWith(2, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -4030,7 +4030,7 @@ describe('sparks Service', function() {
       });
     });
     it('should get the correct block hashes', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var block1 = '00000000050a6d07f583beba2d803296eb1e9d4980c4a20f206c584e89a4f02b';
       var block2 = '000000000383752a55a0b2891ce018fd0fdc0b6352502772b034ec282b4a1bf6';
       var getBlockHashes = sinon.stub().callsArgWith(2, null, {
@@ -4052,7 +4052,7 @@ describe('sparks Service', function() {
   describe('#getBlockHeader', function() {
     var blockhash = '00000000050a6d07f583beba2d803296eb1e9d4980c4a20f206c584e89a4f02b';
     it('will give error from getBlockHash', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHash = sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'});
       sparksd.nodes.push({
         client: {
@@ -4064,7 +4064,7 @@ describe('sparks Service', function() {
       });
     });
     it('it will give rpc error from client getblockheader', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHeader = sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'});
       sparksd.nodes.push({
         client: {
@@ -4076,7 +4076,7 @@ describe('sparks Service', function() {
       });
     });
     it('it will give rpc error from client getblockhash', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHeader = sinon.stub();
       var getBlockHash = sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'});
       sparksd.nodes.push({
@@ -4090,7 +4090,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give result from client getblockheader (from height)', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var result = {
         hash: '0000000000000a817cd3a74aec2f2246b59eb2cbb1ad730213e6c4a1d68ec2f6',
         version: 536870912,
@@ -4139,7 +4139,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give result from client getblockheader (from hash)', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var result = {
         hash: '0000000000000a817cd3a74aec2f2246b59eb2cbb1ad730213e6c4a1d68ec2f6',
         version: 536870912,
@@ -4190,7 +4190,7 @@ describe('sparks Service', function() {
   describe('#getBlockHeaders', function(){
       var blockhash = '00000000050a6d07f583beba2d803296eb1e9d4980c4a20f206c584e89a4f02b';
       it('will gave error from getBlockHash', function(){
-          var sparksd = new sparksService(baseConfig);
+          var sparksd = new SparksService(baseConfig);
           var getBlockHash = sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'});
           sparksd.nodes.push({
               client: {
@@ -4202,7 +4202,7 @@ describe('sparks Service', function() {
           });
       });
       it('it will give rpc error from client getblockheaders', function() {
-          var sparksd = new sparksService(baseConfig);
+          var sparksd = new SparksService(baseConfig);
           var getBlockHeader = sinon.stub().callsArgWith(1, {code: -1, message: 'Test error'});
           sparksd.nodes.push({
               client: {
@@ -4214,7 +4214,7 @@ describe('sparks Service', function() {
           });
       });
       it("will get an array of block headers", function(){
-          var sparksd = new sparksService(baseConfig);
+          var sparksd = new SparksService(baseConfig);
 
           var result = {
               hash: '0000000000000a817cd3a74aec2f2246b59eb2cbb1ad730213e6c4a1d68ec2f6',
@@ -4313,7 +4313,7 @@ describe('sparks Service', function() {
 
   describe('#_maybeGetBlockHash', function() {
     it('will not get block hash with an address', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHash = sinon.stub();
       sparksd.nodes.push({
         client: {
@@ -4330,7 +4330,7 @@ describe('sparks Service', function() {
       });
     });
     it('will not get block hash with non zero-nine numeric string', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHash = sinon.stub();
       sparksd.nodes.push({
         client: {
@@ -4347,7 +4347,7 @@ describe('sparks Service', function() {
       });
     });
     it('will get the block hash if argument is a number', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHash = sinon.stub().callsArgWith(1, null, {
         result: 'blockhash'
       });
@@ -4366,7 +4366,7 @@ describe('sparks Service', function() {
       });
     });
     it('will get the block hash if argument is a number (as string)', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHash = sinon.stub().callsArgWith(1, null, {
         result: 'blockhash'
       });
@@ -4385,7 +4385,7 @@ describe('sparks Service', function() {
       });
     });
     it('will try multiple nodes if one fails', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHash = sinon.stub().callsArgWith(1, null, {
         result: 'blockhash'
       });
@@ -4411,7 +4411,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give error from getBlockHash', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlockHash = sinon.stub().callsArgWith(1, {code: -1, message: 'test'});
       sparksd.tryAllInterval = 1;
       sparksd.nodes.push({
@@ -4437,7 +4437,7 @@ describe('sparks Service', function() {
   describe('#getBlockOverview', function() {
     var blockhash = '00000000050a6d07f583beba2d803296eb1e9d4980c4a20f206c584e89a4f02b';
     it('will handle error from maybeGetBlockHash', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd._maybeGetBlockHash = sinon.stub().callsArgWith(1, new Error('test'));
       sparksd.getBlockOverview(blockhash, function(err) {
         err.should.be.instanceOf(Error);
@@ -4445,7 +4445,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give error from client.getBlock', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBlock = sinon.stub().callsArgWith(2, {code: -1, message: 'test'});
       sparksd.nodes.push({
         client: {
@@ -4459,7 +4459,7 @@ describe('sparks Service', function() {
       });
     });
     it('will give expected result', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var blockResult = {
         hash: blockhash,
         version: 536870912,
@@ -4514,7 +4514,7 @@ describe('sparks Service', function() {
 
   describe('#estimateFee', function() {
     it('will give rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var estimateFee = sinon.stub().callsArgWith(1, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -4528,7 +4528,7 @@ describe('sparks Service', function() {
       });
     });
     it('will call client estimateFee and give result', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var estimateFee = sinon.stub().callsArgWith(1, null, {
         result: -1
       });
@@ -4550,7 +4550,7 @@ describe('sparks Service', function() {
   describe('#sendTransaction', function(done) {
     var tx = sparkscore.Transaction(txhex);
     it('will give rpc error', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var sendRawTransaction = sinon.stub().callsArgWith(3, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -4563,7 +4563,7 @@ describe('sparks Service', function() {
       });
     });
     it('will send to client and get hash', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var sendRawTransaction = sinon.stub().callsArgWith(3, null, {
         result: tx.hash
       });
@@ -4580,7 +4580,7 @@ describe('sparks Service', function() {
       });
     });
     it('will send to client with absurd fees and get hash', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var sendRawTransaction = sinon.stub().callsArgWith(3, null, {
         result: tx.hash
       });
@@ -4597,7 +4597,7 @@ describe('sparks Service', function() {
       });
     });
     it('missing callback will throw error', function() {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var sendRawTransaction = sinon.stub().callsArgWith(3, null, {
         result: tx.hash
       });
@@ -4615,7 +4615,7 @@ describe('sparks Service', function() {
 
   describe('#getRawTransaction', function() {
     it('will give rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getRawTransaction = sinon.stub().callsArgWith(1, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -4629,7 +4629,7 @@ describe('sparks Service', function() {
       });
     });
     it('will try all nodes', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.tryAllInterval = 1;
       var getRawTransactionWithError = sinon.stub().callsArgWith(1, {message: 'error', code: -1});
       var getRawTransaction = sinon.stub().callsArgWith(1, null, {
@@ -4660,7 +4660,7 @@ describe('sparks Service', function() {
       });
     });
     it('will get from cache', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getRawTransaction = sinon.stub().callsArgWith(1, null, {
         result: txhex
       });
@@ -4688,7 +4688,7 @@ describe('sparks Service', function() {
 
   describe('#getTransaction', function() {
     it('will give rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getRawTransaction = sinon.stub().callsArgWith(1, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -4702,7 +4702,7 @@ describe('sparks Service', function() {
       });
     });
     it('will try all nodes', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.tryAllInterval = 1;
       var getRawTransactionWithError = sinon.stub().callsArgWith(1, {message: 'error', code: -1});
       var getRawTransaction = sinon.stub().callsArgWith(1, null, {
@@ -4733,7 +4733,7 @@ describe('sparks Service', function() {
       });
     });
     it('will get from cache', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getRawTransaction = sinon.stub().callsArgWith(1, null, {
         result: txhex
       });
@@ -4803,7 +4803,7 @@ describe('sparks Service', function() {
       ]
     };
     it('should give a transaction with height and timestamp', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.nodes.push({
         client: {
           getRawTransaction: sinon.stub().callsArgWith(2, {code: -1, message: 'Test error'})
@@ -4817,7 +4817,7 @@ describe('sparks Service', function() {
       });
     });
     it('should give a transaction with all properties', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getRawTransaction = sinon.stub().callsArgWith(2, null, {
         result: rpcRawTransaction
       });
@@ -4874,7 +4874,7 @@ describe('sparks Service', function() {
       });
     });
     it('should set coinbase to true', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var rawTransaction = JSON.parse((JSON.stringify(rpcRawTransaction)));
       delete rawTransaction.vin[0];
       rawTransaction.vin = [
@@ -4897,7 +4897,7 @@ describe('sparks Service', function() {
       });
     });
     it('will not include address if address length is zero', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var rawTransaction = JSON.parse((JSON.stringify(rpcRawTransaction)));
       rawTransaction.vout[0].scriptPubKey.addresses = [];
       sparksd.nodes.push({
@@ -4915,7 +4915,7 @@ describe('sparks Service', function() {
       });
     });
     it('will not include address if address length is greater than 1', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var rawTransaction = JSON.parse((JSON.stringify(rpcRawTransaction)));
       rawTransaction.vout[0].scriptPubKey.addresses = ['one', 'two'];
       sparksd.nodes.push({
@@ -4933,7 +4933,7 @@ describe('sparks Service', function() {
       });
     });
     it('will handle scriptPubKey.addresses not being set', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var rawTransaction = JSON.parse((JSON.stringify(rpcRawTransaction)));
       delete rawTransaction.vout[0].scriptPubKey['addresses'];
       sparksd.nodes.push({
@@ -4951,7 +4951,7 @@ describe('sparks Service', function() {
       });
     });
     it('will not include script if input missing scriptSig or coinbase', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var rawTransaction = JSON.parse((JSON.stringify(rpcRawTransaction)));
       delete rawTransaction.vin[0].scriptSig;
       delete rawTransaction.vin[0].coinbase;
@@ -4970,7 +4970,7 @@ describe('sparks Service', function() {
       });
     });
     it('will set height to -1 if missing height', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var rawTransaction = JSON.parse((JSON.stringify(rpcRawTransaction)));
       delete rawTransaction.height;
       sparksd.nodes.push({
@@ -4991,7 +4991,7 @@ describe('sparks Service', function() {
 
   describe('#getBestBlockHash', function() {
     it('will give rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBestBlockHash = sinon.stub().callsArgWith(0, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -5005,7 +5005,7 @@ describe('sparks Service', function() {
       });
     });
     it('will call client getInfo and give result', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getBestBlockHash = sinon.stub().callsArgWith(0, null, {
         result: 'besthash'
       });
@@ -5027,7 +5027,7 @@ describe('sparks Service', function() {
 
   describe('#getSpentInfo', function() {
     it('will give rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getSpentInfo = sinon.stub().callsArgWith(1, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -5041,7 +5041,7 @@ describe('sparks Service', function() {
       });
     });
     it('will empty object when not found', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getSpentInfo = sinon.stub().callsArgWith(1, {message: 'test', code: -5});
       sparksd.nodes.push({
         client: {
@@ -5055,7 +5055,7 @@ describe('sparks Service', function() {
       });
     });
     it('will call client getSpentInfo and give result', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getSpentInfo = sinon.stub().callsArgWith(1, null, {
         result: {
           txid: 'txid',
@@ -5082,7 +5082,7 @@ describe('sparks Service', function() {
 
   describe('#getInfo', function() {
     it('will give rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var getInfo = sinon.stub().callsArgWith(0, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -5096,7 +5096,7 @@ describe('sparks Service', function() {
       });
     });
     it('will call client getInfo and give result', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.node.getNetworkName = sinon.stub().returns('testnet');
       var getInfo = sinon.stub().callsArgWith(0, null, {
         result: {
@@ -5140,7 +5140,7 @@ describe('sparks Service', function() {
 
   describe('#govObject', function() {
     it('will call client gobject list and give result', function(done) {
-        var sparksd = new sparksService(baseConfig);
+        var sparksd = new SparksService(baseConfig);
         var gobject = sinon.stub().callsArgWith(1, null, {
             result: [{
                 "Hash": "9ce5609d41b88fca51dd3f4ad098467cf8c6f2c1b2adf93a6862a7b9bdf01a00",
@@ -5208,7 +5208,7 @@ describe('sparks Service', function() {
     });
 
     it('will call client gobject list and return error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var gobject = sinon.stub().callsArgWith(1, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -5223,7 +5223,7 @@ describe('sparks Service', function() {
     });
 
     it('will call client gobject get and give result', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var hash = "4ef24027c631c43035aa4cf5c672e1298311decd9cffbd16731f454c9c0d6d00";
       var gobject = sinon.stub().callsArgWith(2, null, {
         result: {
@@ -5288,7 +5288,7 @@ describe('sparks Service', function() {
     });
 
     it('will call client gobject get and return error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var gobject = sinon.stub().callsArgWith(2, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -5305,7 +5305,7 @@ describe('sparks Service', function() {
   });
 	describe('#sporksList', function(){
 		it('will call client sporks and give result', function(done){
-			var sparksd = new sparksService(baseConfig);
+			var sparksd = new SparksService(baseConfig);
 
 			sparksd.nodes.push({
 				client: {
@@ -5349,7 +5349,7 @@ describe('sparks Service', function() {
 	});
   describe('#getMNList', function(){
     it('will call client masternode list and give result', function(done){
-	    var sparksd = new sparksService(baseConfig);
+	    var sparksd = new SparksService(baseConfig);
 	    sparksd.isSynced = function(callback) { return callback(null, true) };
 	    sparksd.nodes.push({
 		    client: {
@@ -5395,12 +5395,11 @@ describe('sparks Service', function() {
                 }
 		    }
 	    });
-	    
+
 	    sparksd.getMNList(function(err, MNList) {
 		    if (err) {
 			    return done(err);
 		    }
-		    
 		    MNList.length.should.equal(2);
 		    MNList[0].vin.should.equal("06c4c53b64019a021e8597c19e40807038cab4cd422ca9241db82aa19887354b-0");
 		    MNList[0].status.should.equal("ENABLED");
@@ -5415,7 +5414,7 @@ describe('sparks Service', function() {
     });
 
     it('will return error if one of nodes not synced yet', function(done){
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.isSynced = function(callback) { return callback(null, false) };
       sparksd.nodes.push({
         client: {
@@ -5470,7 +5469,7 @@ describe('sparks Service', function() {
     });
 
     it('will return error if checking synced state of nodes failed', function(done){
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.isSynced = function(callback) { return callback(new Error('Failed')) };
       sparksd.nodes.push({
         client: {
@@ -5526,7 +5525,7 @@ describe('sparks Service', function() {
 
   describe('#generateBlock', function() {
     it('will give rpc error', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var generate = sinon.stub().callsArgWith(1, {message: 'error', code: -1});
       sparksd.nodes.push({
         client: {
@@ -5540,7 +5539,7 @@ describe('sparks Service', function() {
       });
     });
     it('will call client generate and give result', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       var generate = sinon.stub().callsArgWith(1, null, {
         result: ['hash']
       });
@@ -5562,11 +5561,11 @@ describe('sparks Service', function() {
 
   describe('#stop', function() {
     it('will callback if spawn is not set', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.stop(done);
     });
     it('will exit spawned process', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.spawn = {};
       sparksd.spawn.process = new EventEmitter();
       sparksd.spawn.process.kill = sinon.stub();
@@ -5576,7 +5575,7 @@ describe('sparks Service', function() {
       sparksd.spawn.process.emit('exit', 0);
     });
     it('will give error with non-zero exit status code', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.spawn = {};
       sparksd.spawn.process = new EventEmitter();
       sparksd.spawn.process.kill = sinon.stub();
@@ -5590,7 +5589,7 @@ describe('sparks Service', function() {
       sparksd.spawn.process.emit('exit', 1);
     });
     it('will stop after timeout', function(done) {
-      var sparksd = new sparksService(baseConfig);
+      var sparksd = new SparksService(baseConfig);
       sparksd.shutdownTimeout = 300;
       sparksd.spawn = {};
       sparksd.spawn.process = new EventEmitter();

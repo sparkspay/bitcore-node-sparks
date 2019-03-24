@@ -4,7 +4,7 @@ var path = require('path');
 var async = require('async');
 var spawn = require('child_process').spawn;
 
-var sparksdRPC = require('bitcored-rpc-sparks');
+var SparksdRPC = require('bitcored-rpc-sparks');
 var rimraf = require('rimraf');
 var sparkscore = require('bitcore-lib-sparks');
 var chai = require('chai');
@@ -13,10 +13,10 @@ var should = chai.should();
 var index = require('..');
 var log = index.log;
 log.debug = function() {};
-var sparkscoreNode = index.Node;
-var sparksService = index.services.sparks;
+var SparkscoreNode = index.Node;
+var SparksService = index.services.Sparks;
 
-describe('sparks Cluster', function() {
+describe('Sparks Cluster', function() {
   var node;
   var daemons = [];
   var execPath = path.resolve(__dirname, process.env.HOME, './.sparkscore/data/sparksd')
@@ -67,7 +67,7 @@ describe('sparks Cluster', function() {
 
         var process = spawn(execPath, opts, {stdio: 'inherit'});
 
-        var client = new sparksdRPC({
+        var client = new SparksdRPC({
           protocol: 'http',
           host: '127.0.0.1',
           port: nodeConf.rpcport,
@@ -103,7 +103,7 @@ describe('sparks Cluster', function() {
       services: [
         {
           name: 'sparksd',
-          module: sparksService,
+          module: SparksService,
           config: {
             connect: [
               {
@@ -136,7 +136,7 @@ describe('sparks Cluster', function() {
     var regtest = sparkscore.Networks.get('regtest');
     should.exist(regtest);
 
-    node = new sparkscoreNode(configuration);
+    node = new SparkscoreNode(configuration);
 
     node.on('error', function(err) {
       log.error(err);

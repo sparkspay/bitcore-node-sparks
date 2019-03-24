@@ -15,11 +15,11 @@ var node;
 
 var should = chai.should();
 
-var sparksdRPC = require('bitcored-rpc-sparks');
+var SparksdRPC = require('bitcored-rpc-sparks');
 var index = require('..');
 var Transaction = sparkscore.Transaction;
-var sparkscoreNode = index.Node;
-var sparksService = index.services.sparks;
+var SparkscoreNode = index.Node;
+var SparksService = index.services.Sparks;
 var testWIF = 'cSdkPxkAjA4HDr5VHgsebAPDEh9Gyub4HK8UJr2DFGGqKKy4K5sG';
 var testKey;
 var client;
@@ -49,7 +49,7 @@ describe('Node Functionality', function() {
         services: [
           {
             name: 'sparksd',
-            module: sparksService,
+            module: SparksService,
             config: {
               spawn: {
                 datadir: datadir,
@@ -60,7 +60,7 @@ describe('Node Functionality', function() {
         ]
       };
 
-      node = new sparkscoreNode(configuration);
+      node = new SparkscoreNode(configuration);
 
       regtest = sparkscore.Networks.get('regtest');
       should.exist(regtest);
@@ -74,7 +74,7 @@ describe('Node Functionality', function() {
           return done(err);
         }
 
-        client = new sparksdRPC({
+        client = new SparksdRPC({
           protocol: 'http',
           host: '127.0.0.1',
           port: 30331,

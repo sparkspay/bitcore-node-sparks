@@ -17,7 +17,7 @@ var sparksd;
 var should = chai.should();
 var assert = chai.assert;
 var sinon = require('sinon');
-var sparksdRPC = require('bitcored-rpc-sparks');
+var SparksdRPC = require('bitcored-rpc-sparks');
 var transactionData = [];
 var blockHashes = [];
 var utxos;
@@ -26,7 +26,7 @@ var coinbasePrivateKey;
 var privateKey = sparkscore.PrivateKey();
 var destKey = sparkscore.PrivateKey();
 
-describe('sparksd Functionality', function() {
+describe('Sparksd Functionality', function() {
 
   before(function(done) {
     this.timeout(200000);
@@ -43,7 +43,7 @@ describe('sparksd Functionality', function() {
         throw err;
       }
 
-      sparksd = require('../').services.sparks({
+      sparksd = require('../').services.Sparks({
         spawn: {
           datadir: datadir,
           exec: path.resolve(__dirname, process.env.HOME, './.sparkscore/data/sparksd')
@@ -60,12 +60,12 @@ describe('sparksd Functionality', function() {
         log.error('error="%s"', err.message);
       });
 
-      log.info('Waiting for sparks Core to initialize...');
+      log.info('Waiting for Sparks Core to initialize...');
 
       sparksd.start(function() {
-        log.info('sparksd started');
+        log.info('Sparksd started');
 
-        client = new sparksdRPC({
+        client = new SparksdRPC({
           protocol: 'http',
           host: '127.0.0.1',
           port: 30331,

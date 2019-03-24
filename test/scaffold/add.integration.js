@@ -95,7 +95,7 @@ describe('#add', function() {
       var oldPackage = {
         dependencies: {
           'bitcore-lib-sparks': '^v0.15.4',
-          'sparkscore-node': '^v3.0.7'
+          'bitcore-node-sparks': '^v3.0.7'
         }
       };
       var spawn = sinon.stub().returns({

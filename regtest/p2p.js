@@ -21,7 +21,7 @@ var sparksd;
 var should = chai.should();
 var assert = chai.assert;
 var sinon = require('sinon');
-var sparksdRPC = require('bitcored-rpc-sparks');
+var SparksdRPC = require('bitcored-rpc-sparks');
 var transactionData = [];
 var blockHashes = [];
 var txs = [];
@@ -49,7 +49,7 @@ describe('P2P Functionality', function() {
         throw err;
       }
 
-      sparksd = require('../').services.sparks({
+      sparksd = require('../').services.Sparks({
         spawn: {
           datadir: datadir,
           exec: path.resolve(__dirname, process.env.HOME, './.sparkscore/data/sparksd')
@@ -63,15 +63,15 @@ describe('P2P Functionality', function() {
         log.error('error="%s"', err.message);
       });
 
-      log.info('Waiting for sparks Core to initialize...');
+      log.info('Waiting for Sparks Core to initialize...');
 
       sparksd.start(function(err) {
         if (err) {
           throw err;
         }
-        log.info('sparksd started');
+        log.info('Sparksd started');
 
-        client = new sparksdRPC({
+        client = new SparksdRPC({
           protocol: 'http',
           host: '127.0.0.1',
           port: 30331,
