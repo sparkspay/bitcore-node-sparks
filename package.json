@@ -2,7 +2,7 @@
   "name": "bitcore-node-sparks",
   "description": "Full node with extended capabilities using Sparkscore and Sparks Core (sparksd)",
   "author": "BitPay <dev@bitpay.com>",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "main": "./index.js",
   "repository": "git://github.com/sparkspay/sparkscore-node.git",
   "homepage": "https://github.com/sparkspay/sparkscore-node",
@@ -37,11 +37,9 @@
     "sparksd"
   ],
   "dependencies": {
-    "insight-api-sparks": "git+https://github.com/sparkspay/insight-api-sparks.git#master",
-    "insight-ui-sparks": "git+https://github.com/sparkspay/insight-ui-sparks.git#master",
-    "bitcore-lib-sparks": "git+https://github.com/sparkspay/bitcore-lib-sparks.git#master",
-    "bitcored-rpc-sparks": "git+https://github.com/sparkspay/bitcored-rpc-sparks.git#master",
     "async": "^2.6.1",
+    "bitcore-lib-sparks": "git+https://github.com/sparkspay/bitcore-lib-sparks.git#master",
+    "bitcored-rpc-sparks": "git+https://github.com/sparkspay/bitcored-rpc-sparks.git#1.2.1",
     "body-parser": "^1.18.3",
     "colors": "^1.3.3",
     "commander": "^2.19.0",

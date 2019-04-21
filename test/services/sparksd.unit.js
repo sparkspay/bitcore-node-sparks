@@ -56,7 +56,7 @@ describe('Sparks Service', function() {
       should.exist(sparksd.summaryCache);
       should.exist(sparksd.transactionDetailedCache);
       should.exist(sparksd.masternodeListCache);
-
+      should.exist(sparksd.guardiannodeListCache);
       should.exist(sparksd.transactionCache);
       should.exist(sparksd.rawTransactionCache);
       should.exist(sparksd.blockCache);
